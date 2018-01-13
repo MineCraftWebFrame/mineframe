@@ -1,5 +1,5 @@
-# mineframe
-A Web-based admin GUI for minecadt
+# MineFrame
+A Web-based admin GUI for minecraft
 ## dev instructions
 ### get the code
 * go get github.com/MineCraftWebFrame/mineframe
