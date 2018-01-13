@@ -10,7 +10,10 @@ GET     /                                       Static.Serve("public/index.html"
 #GET     /App/Hello                                  App.Hello
 
 #FYI Controllers and Methods must start with a capital letter!
-POST /MfApi/GetStatus MfApi.GetStatus
+POST    /MfApi/ServicetStatus                       MfApi.ServicetStatus
+POST    /MfApi/ServiceStart                         MfApi.ServiceStart
+POST    /MfApi/ServiceStop                          MfApi.ServiceStop
+POST    /MfApi/ServiceRestart                       MfApi.ServiceRestart
 
 # Ignore favicon requests
 GET     /favicon.ico                            404

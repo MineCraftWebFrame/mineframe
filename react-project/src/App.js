@@ -19,6 +19,8 @@ class App extends Component {
 
     switch(action){
       case "start":
+        this.startService();
+        break;
       case "restart":
         this.setState({ServerStatus: "Running"});
         this.setButtonStates("Running");
@@ -30,13 +32,24 @@ class App extends Component {
     }
   }
 
-  componentDidMount() {
-      this.getServerStatus();
-  }
+  startService(){
+  var me = this;
+  axios.post('/MfApi/ServiceStart') //, {Post:Name}
+  .then(function (response) {
+    //console.log(response);
+    
+    me.setState({ServerStatus: response.data.ServerStatus});
+    me.setButtonStates(response.data.ServerStatus);
+  })
+  .catch(function (error) {
+    console.log(error);
+    me.setState({ServerStatus: "Error!"});
+  });
+}
 
   getServerStatus(){
     var me = this;
-    axios.post('/MfApi/GetStatus') //, {Post:Name}
+    axios.post('/MfApi/ServicetStatus') //, {Post:Name}
     .then(function (response) {
       //console.log(response);
 
@@ -73,6 +86,10 @@ class App extends Component {
         break;
     }
   }
+
+  componentDidMount() {
+    this.getServerStatus();
+}
 
   render() {
     return (
