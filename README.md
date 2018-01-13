@@ -1,6 +1,11 @@
 # MineFrame
 A Web-based admin GUI for minecraft
 ## dev instructions
+### install go
+* http://golang.org/doc/install
+### install revel
+* https://revel.github.io/tutorial/gettingstarted.html
+
 ### get the code
 * go get github.com/MineCraftWebFrame/mineframe
 * Launch the revel server
