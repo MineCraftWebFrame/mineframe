@@ -15,7 +15,7 @@ A Web-based admin GUI for minecadt
 * cd $GOPATH/src/github.com/MineCraftWebFrame/mineframe/react-project
 * npm start
   * This launches the react server on 8080
-  * FUTURE: The next step is to setup webpack to proxy connections back to Revel so we can do all the dev from the react webpack server on 8080
+  * The react server will proxy requests to Revel so all dev can be done via http://localhost:8080/
 ## build & commit instructions:
 * before committing, copy the react built .js into the revel web root:
 * copy the contents of /react-project/build/ into /public/
