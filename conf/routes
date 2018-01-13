@@ -3,11 +3,14 @@
 # This file defines all application routes (Higher priority routes first)
 #
 
-module:testrunner
+#module:testrunner
 # module:jobs
 
-#GET     /                                       App.Index
-#GET     /App/Hello                                  App.Hello
+#GET    /                          App.Index
+#GET     /App/Hello                  App.Hello
+
+#FYI Controllers and Methods must start with a capital letter!
+POST /MfApi/GetStatus MfApi.GetStatus
 
 # Ignore favicon requests
 GET     /favicon.ico                            404
