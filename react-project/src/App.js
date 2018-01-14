@@ -87,8 +87,19 @@ class App extends Component {
     }
   }
 
+  initConsoleWebsocket(){
+    // example from https://revel.github.io/examples/chat.html
+    // var socket = new WebSocket('ws://127.0.0.1:9000/websocket/room/socket?user={{.user}}');
+  
+    // // Message received on the socket
+    // socket.onmessage = function(event) {
+    //     display(JSON.parse(event.data));
+    // }
+  }
+
   componentDidMount() {
     this.getServerStatus();
+    this.initConsoleWebsocket();
 }
 
   render() {
