@@ -1,6 +1,7 @@
 # MineFrame
 A Web-based admin GUI for minecraft
 ## dev instructions
+
 ### Setup your Minecraft Spigot server
 * download spigot.jar from https://getbukkit.org
 * make a user for the minecraft server. We are using "miner"
@@ -13,6 +14,12 @@ A Web-based admin GUI for minecraft
 ** Make sure you can run the minecraft server
 *** java -jar spigot-1.12.2.jar
 ** You may have to accept the eula by running nano eula.txt and changing eula=false to eula=true
+
+### install go
+* http://golang.org/doc/install
+### install revel
+* https://revel.github.io/tutorial/gettingstarted.html
+
 ### get the code
 * go get github.com/MineCraftWebFrame/mineframe
 * Launch the revel server
