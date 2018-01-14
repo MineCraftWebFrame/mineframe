@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 	"time"
 
 	"github.com/ryandrew/cmd"
@@ -12,6 +15,9 @@ import (
 type MfApi struct {
 	*revel.Controller
 }
+
+var serverHomeDir = "/home/miner/server"
+var serverConfigFile = serverHomeDir + "/server.properties"
 
 // var serverCmd Cmd
 // var serverCmdStdin ReadCloser
@@ -55,7 +61,7 @@ func (c MfApi) ServiceStart() revel.Result {
 
 		serverCmd := cmd.NewCmd("java", "-jar", "spigot-1.12.2.jar")
 		//statusChan :=
-		serverCmd.Dir = "/home/miner/server"
+		serverCmd.Dir = serverHomeDir
 		serverCmd.Start()
 
 		ticker := time.NewTicker(time.Second * 1)
@@ -131,4 +137,47 @@ func (c MfApi) ServiceRestart() revel.Result {
 	data["success"] = true
 
 	return c.RenderJSON(data)
+}
+
+func (c MfApi) ServerConfigRead() revel.Result {
+	configFileContents, err := ioutil.ReadFile(serverConfigFile)
+	if err != nil {
+		panic(err)
+	}
+
+	data := make(map[string]interface{})
+	data["configFile"] = serverConfigFile
+	data["config"] = fmt.Sprintf("%s", configFileContents)
+	data["success"] = true
+
+	return c.RenderJSON(data)
+}
+
+func (c MfApi) ServerConfigUpdate(config string) revel.Result {
+	c.Validation.Required(config)
+	c.Validation.MaxSize(config, 5000)
+	c.Validation.MinSize(config, 100)
+
+	//https://www.devdungeon.com/content/working-files-go
+	file, err := os.OpenFile(
+		serverConfigFile,
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	// Write bytes to file
+	_, err = file.WriteString(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return c.ServerConfigRead()
+	// data := make(map[string]interface{})
+	// data["success"] = true
+
+	// return c.RenderJSON(data)
 }

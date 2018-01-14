@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import logo from './block.png';
 import './App.css';
 import axios from 'axios';
+import ServerConfigEditor from './ServerConfigEditor';
 
 class App extends Component {
   constructor(props) {
@@ -18,6 +19,8 @@ class App extends Component {
     console.log('minecraftServerAction! '+action);
 
     switch(action){
+      default:
+        break;
       case "start":
         this.startService();
         break;
@@ -121,6 +124,7 @@ class App extends Component {
           Restart
         </button>
         </p>
+        <ServerConfigEditor />
       </div>
     );
   }

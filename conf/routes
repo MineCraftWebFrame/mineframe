@@ -15,6 +15,9 @@ POST    /MfApi/ServiceStart                         MfApi.ServiceStart
 POST    /MfApi/ServiceStop                          MfApi.ServiceStop
 POST    /MfApi/ServiceRestart                       MfApi.ServiceRestart
 
+POST    /MfApi/ServerConfigRead                     MfApi.ServerConfigRead
+POST    /MfApi/ServerConfigUpdate                   MfApi.ServerConfigUpdate
+
 # Ignore favicon requests
 GET     /favicon.ico                            404
 
