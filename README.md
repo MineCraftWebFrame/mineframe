@@ -5,15 +5,15 @@ A Web-based admin GUI for minecraft
 ### Setup your Minecraft Spigot server
 * download spigot.jar from https://getbukkit.org
 * make a user for the minecraft server. We are using "miner"
-** adduser miner
-*** cd /home/miner/
-** make a directory for the server to run from
-*** mkdir server
-*** cd server
-** move the spigot jar file into the server dir
-** Make sure you can run the minecraft server
-*** java -jar spigot-1.12.2.jar
-** You may have to accept the eula by running nano eula.txt and changing eula=false to eula=true
+  * adduser miner
+* make a directory for the server to run from
+  * cd /home/miner/
+  * mkdir server
+  * cd server
+* move the spigot jar file into the /home/miner/server dir
+* Make sure you can run the minecraft server
+  * java -jar spigot-1.12.2.jar
+* You may have to accept the eula by running nano eula.txt and changing eula=false to eula=true
 
 ### install go
 * http://golang.org/doc/install
