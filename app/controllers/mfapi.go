@@ -153,10 +153,16 @@ func (c MfApi) ServerConfigRead() revel.Result {
 	return c.RenderJSON(data)
 }
 
-func (c MfApi) ServerConfigUpdate(config string) revel.Result {
-	c.Validation.Required(config)
-	c.Validation.MaxSize(config, 5000)
-	c.Validation.MinSize(config, 100)
+func (c MfApi) ServerConfigUpdate() revel.Result {
+	var jsonData map[string]interface{}
+	c.Params.BindJSON(&jsonData)
+
+	// c.Validation.Required(config)
+	// c.Validation.MaxSize(config, 5000)
+	// c.Validation.MinSize(config, 100)
+	config := jsonData["config"]
+
+	fmt.Println(config)
 
 	//https://www.devdungeon.com/content/working-files-go
 	file, err := os.OpenFile(
@@ -170,7 +176,7 @@ func (c MfApi) ServerConfigUpdate(config string) revel.Result {
 	defer file.Close()
 
 	// Write bytes to file
-	_, err = file.WriteString(config)
+	_, err = file.WriteString(config.(string))
 	if err != nil {
 		log.Fatal(err)
 	}

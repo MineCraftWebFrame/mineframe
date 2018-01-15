@@ -16,7 +16,13 @@ class ServerConfigEditor extends Component {
     }
     ServerConfigUpdate(){
         var me = this;
-        console.log(this.state);
+        //console.log(this.state);
+        var config = this.state.config;
+        if(config == ""){
+            console.log("Blank config!");
+            return false;
+        }
+        
         this.setState({btnSaveConfigDisabled:true});
         axios.post('/MfApi/ServerConfigUpdate',{config:this.state.config})
         .then(function (response) {
