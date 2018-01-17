@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/ryandrew/cmd"
@@ -16,12 +16,47 @@ type MfApi struct {
 	*revel.Controller
 }
 
-var serverHomeDir = "/home/miner/server"
-var serverConfigFile = serverHomeDir + "/server.properties"
+//var serverHomeDir string
 
-// var serverCmd Cmd
-// var serverCmdStdin ReadCloser
-// var serverCmdStdout ReadCloser
+func getServerConfigFile() string {
+	return getServerDir() + "/server.properties"
+}
+func getServerDir() string {
+	return getCwd() + "/minecraftserver"
+}
+func checkifMinecraftDirExists() {
+	serverDir := getServerDir()
+
+	var err error
+
+	_, err = os.Stat(serverDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = makeServerDir(serverDir)
+			fmt.Println("Error making server dir")
+			fmt.Println(serverDir)
+			fmt.Println(err)
+		}
+	}
+
+}
+func makeServerDir(dir string) error {
+	err := os.MkdirAll(dir, 0777)
+	return err
+}
+func getCwd() string {
+	//if &serverHomeDir == nil {
+	execPath, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("execPath: " + execPath)
+	serverHomeDir := filepath.Dir(execPath)
+
+	//}
+	fmt.Println("serverHomeDir: " + serverHomeDir)
+	return serverHomeDir
+}
 
 func (c MfApi) ServicetStatus() revel.Result {
 	data := make(map[string]interface{})
@@ -31,37 +66,17 @@ func (c MfApi) ServicetStatus() revel.Result {
 	return c.RenderJSON(data)
 }
 
-func (c MfApi) ServiceStart() revel.Result {
-	//https://golang.org/pkg/os/exec/
-
-	// serverCmdText := "java -jar spigot-1.12.2.jar >> log.txt"
-	// serverCmd := exec.Command("bash", "-c", serverCmdText)
-	// serverCmd.Dir = "/home/miner/server"
-	// serverCmdStdin, err := serverCmd.StdinPipe()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// serverCmdStdout, err := serverCmd.StdoutPipe()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// serverCmdStderr, err := serverCmd.StderrPipe()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// err := serverCmd.Start()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+func ServiceStartGoRoutine() {
 
 	//Launch minecraft in a goroutine
 	go func() {
 		pidFound := false
 
+		checkifMinecraftDirExists()
+
 		serverCmd := cmd.NewCmd("java", "-jar", "spigot-1.12.2.jar")
 		//statusChan :=
-		serverCmd.Dir = serverHomeDir
+		serverCmd.Dir = getServerDir()
 		serverCmd.Start()
 
 		ticker := time.NewTicker(time.Second * 1)
@@ -115,6 +130,37 @@ func (c MfApi) ServiceStart() revel.Result {
 		// // no, still running
 		// }
 	}()
+}
+
+func (c MfApi) ServiceStart() revel.Result {
+	getCwd()
+
+	checkifMinecraftDirExists()
+
+	//https://golang.org/pkg/os/exec/
+
+	// serverCmdText := "java -jar spigot-1.12.2.jar >> log.txt"
+	// serverCmd := exec.Command("bash", "-c", serverCmdText)
+	// serverCmd.Dir = "/home/miner/server"
+	// serverCmdStdin, err := serverCmd.StdinPipe()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// serverCmdStdout, err := serverCmd.StdoutPipe()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// serverCmdStderr, err := serverCmd.StderrPipe()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// err := serverCmd.Start()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	//	ServiceStartGoRoutine()
 
 	outputData := make(map[string]interface{})
 	outputData["ServerStatus"] = "Running"
@@ -140,16 +186,21 @@ func (c MfApi) ServiceRestart() revel.Result {
 }
 
 func (c MfApi) ServerConfigRead() revel.Result {
-	configFileContents, err := ioutil.ReadFile(serverConfigFile)
-	if err != nil {
-		panic(err)
-	}
+	checkifMinecraftDirExists()
+
+	var serverConfigFile = getServerConfigFile()
 
 	data := make(map[string]interface{})
-	data["configFile"] = serverConfigFile
-	data["config"] = fmt.Sprintf("%s", configFileContents)
-	data["success"] = true
 
+	configFileContents, err := ioutil.ReadFile(serverConfigFile)
+	if err == nil {
+		data["config"] = fmt.Sprintf("%s", configFileContents)
+	} else {
+		data["config"] = "Error Reading Config file!"
+	}
+
+	data["configFile"] = serverConfigFile
+	data["success"] = true
 	return c.RenderJSON(data)
 }
 
@@ -157,28 +208,36 @@ func (c MfApi) ServerConfigUpdate() revel.Result {
 	var jsonData map[string]interface{}
 	c.Params.BindJSON(&jsonData)
 
-	// c.Validation.Required(config)
-	// c.Validation.MaxSize(config, 5000)
-	// c.Validation.MinSize(config, 100)
 	config := jsonData["config"]
 
+	c.Validation.Required(config)
+	c.Validation.MaxSize(config, 5000)
+	c.Validation.MinSize(config, 100)
+
+	fmt.Print("config: ")
 	fmt.Println(config)
+
+	if c.Validation.HasErrors() {
+		return c.outputJsonError("config invalid")
+	}
 
 	//https://www.devdungeon.com/content/working-files-go
 	file, err := os.OpenFile(
-		serverConfigFile,
+		getServerConfigFile(),
 		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
 		0666,
 	)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return c.outputJsonError("Error 1 while saving config file")
 	}
 	defer file.Close()
 
 	// Write bytes to file
 	_, err = file.WriteString(config.(string))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return c.outputJsonError("Error 2 while saving config file")
 	}
 
 	return c.ServerConfigRead()
@@ -186,4 +245,11 @@ func (c MfApi) ServerConfigUpdate() revel.Result {
 	// data["success"] = true
 
 	// return c.RenderJSON(data)
+}
+
+func (c MfApi) outputJsonError(errorString string) revel.Result {
+	data := make(map[string]interface{})
+	data["success"] = false
+	data["error"] = errorString
+	return c.RenderJSON(data)
 }

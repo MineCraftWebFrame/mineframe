@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import logo from './block.png';
 import './App.css';
-import axios from 'axios';
+import Ajax from './Ajax.js';
 import ServerConfigEditor from './ServerConfigEditor';
 
 class App extends Component {
@@ -35,38 +35,42 @@ class App extends Component {
     }
   }
 
-  startService(){
-  var me = this;
-  axios.post('/MfApi/ServiceStart') //, {Post:Name}
-  .then(function (response) {
-    //console.log(response);
-    
-    me.setState({ServerStatus: response.data.ServerStatus});
-    me.setButtonStates(response.data.ServerStatus);
-  })
-  .catch(function (error) {
-    console.log(error);
-    me.setState({ServerStatus: "Error!"});
+
+startService(){
+
+  Ajax({
+    url:'/MfApi/ServiceStart',
+    success:function (response) {
+      //console.log(response);
+      
+      this.setState({ServerStatus: response.data.ServerStatus});
+      this.setButtonStates(response.data.ServerStatus);
+    },
+    failure:function () {
+      this.setState({ServerStatus: "Error!"});
+    },
+    scope:this
   });
+
 }
 
   getServerStatus(){
-    var me = this;
-    axios.post('/MfApi/ServicetStatus') //, {Post:Name}
-    .then(function (response) {
-      //console.log(response);
 
-      //old school
-      //document.getElementById('ServerStatus').innerHTML = response.data.ServerStatus;
-      
-      //new school
-      me.setState({ServerStatus: response.data.ServerStatus});
-      me.setButtonStates(response.data.ServerStatus);
-    })
-    .catch(function (error) {
-      console.log(error);
-      me.setState({ServerStatus: "Error!"});
+    Ajax({
+      url:'/MfApi/ServicetStatus',
+      success:function (data) {
+        console.log('status success');
+        console.log(data);
+
+        this.setState({ServerStatus: data.ServerStatus});
+        this.setButtonStates(data.ServerStatus);
+      },
+      failure:function () {
+        this.setState({ServerStatus: "Error!"});
+      },
+      scope:this
     });
+
   }
 
   setButtonStates(status){

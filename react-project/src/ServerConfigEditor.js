@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import Ajax from './Ajax.js';
 import './ServerConfigEditor.css';
 
 class ServerConfigEditor extends Component {
@@ -15,43 +15,53 @@ class ServerConfigEditor extends Component {
         this.setState({config: event.target.value});
     }
     ServerConfigUpdate(){
-        var me = this;
-        //console.log(this.state);
+        
         var config = this.state.config;
         if(config == ""){
             console.log("Blank config!");
-            return false;
+        //    return false;
         }
         
         this.setState({btnSaveConfigDisabled:true});
-        axios.post('/MfApi/ServerConfigUpdate',{config:this.state.config})
-        .then(function (response) {
 
-            me.setState({
-                btnSaveConfigDisabled:false
-            });
-        })
-        .catch(function (error) {
-            me.setState({
-                btnSaveConfigDisabled:false,  
-                serverConfig: "Error Reading Config From Server!"
-            });
-        });
+        Ajax({
+            url:'/MfApi/ServerConfigUpdate',
+            params:{config:this.state.config},
+            success:function (data) {
+              
+                this.setState({
+                    btnSaveConfigDisabled:false
+                });
+            },
+            failure:function () {
+                this.setState({
+                    btnSaveConfigDisabled:false,  
+                    serverConfig: "Error Reading Config From Server!"
+                });
+            },
+            scope:this
+          });
+
     }
     ServerConfigRead(){
-        var me = this;
-        axios.post('/MfApi/ServerConfigRead')
-        .then(function (response) {
 
-            me.setState({
-                btnSaveConfigDisabled:false, 
-                configFile:response.data.configFile,
-                config:response.data.config
-            });
-        })
-        .catch(function (error) {
-          me.setState({serverConfig: "Error Reading Config From Server!"});
+        Ajax({
+            url:'/MfApi/ServerConfigRead',
+            params:{config:this.state.config},
+            success:function (data) {
+                
+                this.setState({
+                    btnSaveConfigDisabled:false, 
+                    configFile:data.configFile,
+                    config:data.config
+                });
+            },
+            failure:function (error) {
+                this.setState({serverConfig: "Error Reading Config From Server!"});
+            },
+            scope:this
         });
+
     }
     componentDidMount() {
         this.ServerConfigRead();
