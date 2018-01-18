@@ -19,7 +19,7 @@ class ServerConfigEditor extends Component {
         var config = this.state.config;
         if(config == ""){
             console.log("Blank config!");
-        //    return false;
+            return false;
         }
         
         this.setState({btnSaveConfigDisabled:true});

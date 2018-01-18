@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ryandrew/cmd"
-
+	"github.com/mitchellh/go-homedir"
 	"github.com/revel/revel"
+	"github.com/ryandrew/cmd"
 )
 
 type MfApi struct {
@@ -22,7 +22,17 @@ func getServerConfigFile() string {
 	return getServerDir() + "/server.properties"
 }
 func getServerDir() string {
-	return getCwd() + "/minecraftserver"
+	var err error
+
+	serverRoot, err := homedir.Dir()
+	if err != nil {
+		panic("Could not get home dir! Error 1 " + err.Error())
+	}
+	serverRoot, err = homedir.Expand(serverRoot)
+	if err != nil {
+		panic("Could not get home dir! Error 2 " + err.Error())
+	}
+	return serverRoot + "/minecraftserver"
 }
 func checkifMinecraftDirExists() {
 	serverDir := getServerDir()
