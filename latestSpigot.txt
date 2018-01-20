@@ -1,1 +1,1 @@
-spigot-1.12.2.jar
+https://cdn.getbukkit.org/spigot/spigot-1.12.2.jar
