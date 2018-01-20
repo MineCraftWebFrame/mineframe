@@ -15,8 +15,8 @@ POST    /MfApi/ServiceStart                         MfApi.ServiceStart
 POST    /MfApi/ServiceStop                          MfApi.ServiceStop
 POST    /MfApi/ServiceRestart                       MfApi.ServiceRestart
 
-POST    /MfApi/ServerConfigRead                     MfApi.ServerConfigRead
-POST    /MfApi/ServerConfigUpdate                   MfApi.ServerConfigUpdate
+POST    /MfApi/MinecraftConfigRead                     MfApi.MinecraftConfigRead
+POST    /MfApi/MinecraftConfigUpdate                   MfApi.MinecraftConfigUpdate
 
 # Ignore favicon requests
 GET     /favicon.ico                            404

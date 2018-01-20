@@ -25,7 +25,7 @@ class ServerConfigEditor extends Component {
         this.setState({btnSaveConfigDisabled:true});
 
         Ajax({
-            url:'/MfApi/ServerConfigUpdate',
+            url:'/MfApi/MinecraftConfigUpdate',
             params:{config:this.state.config},
             success:function (data) {
               
@@ -46,7 +46,7 @@ class ServerConfigEditor extends Component {
     ServerConfigRead(){
 
         Ajax({
-            url:'/MfApi/ServerConfigRead',
+            url:'/MfApi/MinecraftConfigRead',
             params:{config:this.state.config},
             success:function (data) {
                 

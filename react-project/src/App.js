@@ -40,11 +40,11 @@ startService(){
 
   Ajax({
     url:'/MfApi/ServiceStart',
-    success:function (response) {
-      //console.log(response);
+    success:function (data) {
+      //console.log(data);
       
-      this.setState({ServerStatus: response.data.ServerStatus});
-      this.setButtonStates(response.data.ServerStatus);
+      this.setState({ServerStatus: data.ServerStatus});
+      this.setButtonStates(data.ServerStatus);
     },
     failure:function () {
       this.setState({ServerStatus: "Error!"});

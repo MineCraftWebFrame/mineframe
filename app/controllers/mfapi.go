@@ -1,10 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
-	"path/filepath"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/go-homedir"
@@ -16,56 +20,150 @@ type MfApi struct {
 	*revel.Controller
 }
 
-//var serverHomeDir string
+var serverDir string = ""
+var spigotVersionUrl string = "https://raw.githubusercontent.com/MineCraftWebFrame/mineframe/master/latestSpigot.txt"
 
+func getMinecraftConfigFile() string {
+	return getMinecraftDir() + "/server.properties"
+}
+func getMinecraftDir() string {
+	return getServerDir() + "/minecraft"
+}
 func getServerConfigFile() string {
-	return getServerDir() + "/server.properties"
+	return getServerDir() + "/mineframe.json"
 }
 func getServerDir() string {
+	if serverDir != "" {
+		return serverDir
+	}
 	var err error
 
 	serverRoot, err := homedir.Dir()
 	if err != nil {
-		panic("Could not get home dir! Error 1 " + err.Error())
+		panic("Could not get home dir! Error 1 env " + err.Error())
 	}
 	serverRoot, err = homedir.Expand(serverRoot)
 	if err != nil {
-		panic("Could not get home dir! Error 2 " + err.Error())
+		panic("Could not get home dir! Error 2 expand " + err.Error())
 	}
-	return serverRoot + "/minecraftserver"
+	serverDir = serverRoot + "/mineframe"
+	return serverDir
 }
-func checkifMinecraftDirExists() {
-	serverDir := getServerDir()
+func checkIfFileExists(fileName string) bool {
 
-	var err error
-
-	_, err = os.Stat(serverDir)
+	_, err := os.Stat(fileName)
 	if err != nil {
 		if os.IsNotExist(err) {
-			err = makeServerDir(serverDir)
-			fmt.Println("Error making server dir")
-			fmt.Println(serverDir)
-			fmt.Println(err)
+			return false
 		}
 	}
+	return true
+}
+func checkifMinecraftServerExists(serverPath string, config map[string]interface{}) {
 
+	if !checkIfFileExists(serverPath) {
+
+		err := downloadFile(serverPath, config["url"].(string))
+		if err != nil {
+			fmt.Println("Error downloading  server jar file")
+			panic(err)
+		}
+	}
+}
+func checkJavaVersion() {
+	fmt.Println("Checking if Java is installed")
+
+	cmd := exec.Command("java", "-version")
+
+	stdoutStderr, err := cmd.CombinedOutput()
+	fmt.Printf("%s\n", stdoutStderr)
+	if err != nil {
+		fmt.Println("Error! Java Not Installed!")
+		panic(err)
+	}
+
+}
+func checkifMinecraftDirExists() {
+	serverDir := getMinecraftDir()
+
+	if !checkIfFileExists(serverDir) {
+		err := makeServerDir(serverDir)
+		if err != nil {
+			errStr := "Error making server dir"
+			fmt.Println(errStr)
+			fmt.Println(serverDir)
+			fmt.Println(err)
+			panic(errStr)
+		}
+	}
 }
 func makeServerDir(dir string) error {
 	err := os.MkdirAll(dir, 0777)
 	return err
 }
-func getCwd() string {
-	//if &serverHomeDir == nil {
-	execPath, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("execPath: " + execPath)
-	serverHomeDir := filepath.Dir(execPath)
+func getLatestSpigotVersion() (url string, name string) {
 
-	//}
-	fmt.Println("serverHomeDir: " + serverHomeDir)
-	return serverHomeDir
+	resp, err := http.Get(spigotVersionUrl)
+	if err != nil {
+		panic("Fetch Spigot Error 1 bad HTTP request! " + err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		panic("Fetch Spigot Error 2 bad HTTP response! " + err.Error())
+	}
+
+	responseBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic("Fetch Spigot Error 3 cannot read response! " + err.Error())
+	}
+	response := string(responseBytes)
+	response = strings.TrimSpace(response)
+
+	lastSlash := strings.LastIndex(response, "/")
+	if lastSlash == -1 {
+		panic("last slash not found")
+	}
+	lastSlash++
+
+	fmt.Println(response)
+
+	name = response[lastSlash:]
+
+	fmt.Println(name)
+
+	url = response
+	return url, name
+}
+func downloadFile(filepath string, url string) (err error) {
+
+	fmt.Println("Downloading File: ")
+	fmt.Print("From: ")
+	fmt.Println(url)
+	fmt.Print("To: ")
+	fmt.Println(filepath)
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Writer the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c MfApi) ServicetStatus() revel.Result {
@@ -82,12 +180,24 @@ func ServiceStartGoRoutine() {
 	go func() {
 		pidFound := false
 
-		checkifMinecraftDirExists()
+		minecraftDir := getMinecraftDir()
+		config := readConfig()
 
-		serverCmd := cmd.NewCmd("java", "-jar", "spigot-1.12.2.jar")
+		minecraftServerJar := config["minecraftServerJar"].(string)
+
+		checkifMinecraftServerExists(minecraftDir+"/"+minecraftServerJar, config)
+
+		checkJavaVersion()
+
+		serverCmd := cmd.NewCmd("java", "-jar", minecraftServerJar)
 		//statusChan :=
-		serverCmd.Dir = getServerDir()
+		serverCmd.Dir = minecraftDir
 		serverCmd.Start()
+		//err := serverCmd.Start()
+		//if err != nil {
+		//	fmt.Println("Error starting  server jar file. Java probably not installed")
+		//	panic(err)
+		//}
 
 		ticker := time.NewTicker(time.Second * 1)
 
@@ -143,7 +253,6 @@ func ServiceStartGoRoutine() {
 }
 
 func (c MfApi) ServiceStart() revel.Result {
-	getCwd()
 
 	checkifMinecraftDirExists()
 
@@ -170,7 +279,7 @@ func (c MfApi) ServiceStart() revel.Result {
 	// 	log.Fatal(err)
 	// }
 
-	//	ServiceStartGoRoutine()
+	ServiceStartGoRoutine()
 
 	outputData := make(map[string]interface{})
 	outputData["ServerStatus"] = "Running"
@@ -194,11 +303,69 @@ func (c MfApi) ServiceRestart() revel.Result {
 
 	return c.RenderJSON(data)
 }
+func writeConfig(config map[string]interface{}) {
+	var err error
 
-func (c MfApi) ServerConfigRead() revel.Result {
+	configFile, err := os.Create(getServerConfigFile())
+	if err != nil {
+		panic("error writing config file 1! " + err.Error())
+	}
+	defer configFile.Close()
+
+	configFileWriter := io.Writer(configFile)
+
+	enc := json.NewEncoder(configFileWriter)
+	err = enc.Encode(config)
+	if err != nil {
+		panic("error writing config file 2! " + err.Error())
+	}
+}
+
+func readConfig() (config map[string]interface{}) {
+	config = make(map[string]interface{})
+
+	checkifMinecraftDirExists()
+	if !checkIfFileExists(getServerConfigFile()) {
+		fmt.Println("Config file doesn't exist")
+		url, name := getLatestSpigotVersion()
+
+		fmt.Print("name: ")
+		fmt.Println(name)
+		fmt.Print("url: ")
+		fmt.Println(url)
+
+		config["minecraftServerJar"] = name
+		config["url"] = url
+
+		writeConfig(config)
+
+		return config
+	}
+
+	fmt.Println("reading Config file")
+
+	//filename is the path to the json config file
+	file, err := os.Open(getServerConfigFile())
+	if err != nil {
+		panic("Could not read server config file!")
+	}
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&config)
+	if err != nil {
+		panic("Could not decode server config file!")
+	}
+	fmt.Print("config minecraftServerJar: ")
+	fmt.Println(config["minecraftServerJar"])
+	fmt.Print("config url: ")
+	fmt.Println(config["url"])
+
+	return config
+}
+
+func (c MfApi) MinecraftConfigRead() revel.Result {
 	checkifMinecraftDirExists()
 
-	var serverConfigFile = getServerConfigFile()
+	var serverConfigFile = getMinecraftConfigFile()
 
 	data := make(map[string]interface{})
 
@@ -214,7 +381,7 @@ func (c MfApi) ServerConfigRead() revel.Result {
 	return c.RenderJSON(data)
 }
 
-func (c MfApi) ServerConfigUpdate() revel.Result {
+func (c MfApi) MinecraftConfigUpdate() revel.Result {
 	var jsonData map[string]interface{}
 	c.Params.BindJSON(&jsonData)
 
@@ -250,7 +417,7 @@ func (c MfApi) ServerConfigUpdate() revel.Result {
 		return c.outputJsonError("Error 2 while saving config file")
 	}
 
-	return c.ServerConfigRead()
+	return c.MinecraftConfigRead()
 	// data := make(map[string]interface{})
 	// data["success"] = true
 
