@@ -18,6 +18,8 @@ POST    /MfApi/ServiceRestart                       MfApi.ServiceRestart
 POST    /MfApi/MinecraftConfigRead                     MfApi.MinecraftConfigRead
 POST    /MfApi/MinecraftConfigUpdate                   MfApi.MinecraftConfigUpdate
 
+WS    /ServiceSocket                       ServiceSocket.HandleWSConnection
+
 # Ignore favicon requests
 GET     /favicon.ico                            404
 

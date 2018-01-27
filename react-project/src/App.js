@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import logo from './block.png';
 import './App.css';
+import $ from 'jquery';
 import Ajax from './Ajax.js';
 import ServerConfigEditor from './ServerConfigEditor';
 
@@ -22,7 +23,8 @@ class App extends Component {
       default:
         break;
       case "start":
-        this.startService();
+        this.sendWebsocketMessage("StartService");
+        //this.startService();
         break;
       case "restart":
         this.setState({ServerStatus: "Running"});
@@ -93,15 +95,43 @@ startService(){
         break;
     }
   }
+  sendWebsocketMessage(message){
+    if(!this.socket){
+      console.log('Websocket not initialized');
+      return false;
+    }
 
+    if(this.socket.readyState !== WebSocket.OPEN){
+      console.log('Websocket not connected');
+      return false;
+    }
+
+    this.socket.send(message);
+  }
   initConsoleWebsocket(){
+    var me=this;
     // example from https://revel.github.io/examples/chat.html
-    // var socket = new WebSocket('ws://127.0.0.1:9000/websocket/room/socket?user={{.user}}');
-  
-    // // Message received on the socket
-    // socket.onmessage = function(event) {
-    //     display(JSON.parse(event.data));
-    // }
+    me.socket = new WebSocket('ws://127.0.0.1:9000/ServiceSocket');
+    me.socket.onerror = function(){
+      me.display("error with websocket!");
+      return;
+    }
+    me.socket.onclose = function(){
+      me.display("websocket closed!");
+      return;
+    }
+    // Message received on the socket
+    me.socket.onmessage = function(event) {
+      me.display(JSON.parse(event.data));
+      
+    }
+  }
+  display(event) {
+
+    console.log('Socket Event!')
+    console.log(event);
+    $('#serviceConsole').append('<div class="message">'+ event + '</div>');
+    //$('#serviceConsole').scrollTo('max')
   }
 
   componentDidMount() {
@@ -117,6 +147,7 @@ startService(){
           <h1 className="App-title">MineFrame Server</h1>
         </header>
         <p className="ServerStatus">Server Status: {this.state.ServerStatus}</p>
+        <div id="serviceConsole"></div>
         <p>
         <button disabled={this.state.btnStartDisabled} className="btn-service-control" onClick={(e) => {this.minecraftServerAction('start',e)}}>
           Start

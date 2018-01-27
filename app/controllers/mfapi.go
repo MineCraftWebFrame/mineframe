@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/revel/revel"
 	"github.com/ryandrew/cmd"
 )
@@ -20,34 +20,19 @@ type MfApi struct {
 	*revel.Controller
 }
 
-var serverDir string = ""
-var spigotVersionUrl string = "https://raw.githubusercontent.com/MineCraftWebFrame/mineframe/master/latestSpigot.txt"
+var (
+	serverDir        = "mineframe"
+	spigotVersionURL = "https://raw.githubusercontent.com/MineCraftWebFrame/mineframe/master/latestSpigot.txt"
+)
 
 func getMinecraftConfigFile() string {
-	return getMinecraftDir() + "/server.properties"
+	return filepath.FromSlash(getMinecraftDir() + "/server.properties")
 }
 func getMinecraftDir() string {
-	return getServerDir() + "/minecraft"
+	return filepath.FromSlash(getServerDir() + "/minecraft")
 }
 func getServerConfigFile() string {
-	return getServerDir() + "/mineframe.json"
-}
-func getServerDir() string {
-	if serverDir != "" {
-		return serverDir
-	}
-	var err error
-
-	serverRoot, err := homedir.Dir()
-	if err != nil {
-		panic("Could not get home dir! Error 1 env " + err.Error())
-	}
-	serverRoot, err = homedir.Expand(serverRoot)
-	if err != nil {
-		panic("Could not get home dir! Error 2 expand " + err.Error())
-	}
-	serverDir = serverRoot + "/mineframe"
-	return serverDir
+	return filepath.FromSlash(getServerDir() + "/mineframe.json")
 }
 func checkIfFileExists(fileName string) bool {
 
@@ -103,7 +88,7 @@ func makeServerDir(dir string) error {
 }
 func getLatestSpigotVersion() (url string, name string) {
 
-	resp, err := http.Get(spigotVersionUrl)
+	resp, err := http.Get(spigotVersionURL)
 	if err != nil {
 		panic("Fetch Spigot Error 1 bad HTTP request! " + err.Error())
 	}
