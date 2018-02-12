@@ -126,6 +126,18 @@ startService(){
       
     }
   }
+  socketInputKey(event){
+    if(event.key == 'Enter'){
+       this.socketInput();
+    }
+  }
+  socketInput(){
+    var cmd = $('#wsInput');
+    var val = cmd.val();
+    //console.log(val);
+    this.sendWebsocketMessage(val);
+    cmd.val('');
+  }
   display(event) {
 
     console.log('Socket Event!')
@@ -148,6 +160,9 @@ startService(){
         </header>
         <p className="ServerStatus">Server Status: {this.state.ServerStatus}</p>
         <div id="serviceConsole"></div>
+        <p>
+          Command: <input id="wsInput" onKeyPress={(e) => {this.socketInputKey(e)}} /> <button onClick={() => {this.socketInput()}}>Send</button>
+        </p>
         <p>
         <button disabled={this.state.btnStartDisabled} className="btn-service-control" onClick={(e) => {this.minecraftServerAction('start',e)}}>
           Start
