@@ -21,23 +21,23 @@ type ServiceSocket struct {
 	*revel.Controller
 }
 
-var processSocketData = make(chan []byte, 512)
+var processSocketData = make(chan string)
 var processSocketActive = false
 var processSocketChecked = false
 
-var processSocketLocalLineBuffer = list.New()
+var processSocketLocalLineBuffer = make([]string, 10)
 var activeConnectionsList = list.New()
 
 func init() {
 	go initProcessSocket()
 }
 
-func sendToAllConnections(msg []byte) {
+func sendToAllConnections(msg string) {
 	i := 0
 	for e := activeConnectionsList.Front(); e != nil; e = e.Next() {
 		i++
 		fmt.Println("Sending Data to ", i)
-		el := e.Value.(chan []byte)
+		el := e.Value.(chan string)
 		el <- msg
 	}
 }
@@ -49,40 +49,51 @@ func (c ServiceSocket) HandleWSConnection(ws revel.ServerWebSocket) revel.Result
 	}
 
 	fmt.Println("Sending old console output to client")
-	for e := processSocketLocalLineBuffer.Front(); e != nil; e = e.Next() {
-		str := e.Value.([]byte)
-		fmt.Printf("%s\n", str)
-		if ws.MessageSendJSON(string(str)) != nil {
+
+	mutex.Lock()
+	for i := range processSocketLocalLineBuffer {
+		//for e := .Front(); e != nil; e = e.Next() {
+		//str := fmt.Sprintf("%s\n", e.Value)
+		fmt.Println(processSocketLocalLineBuffer[i])
+		if ws.MessageSendJSON(processSocketLocalLineBuffer[i]) != nil {
 			fmt.Println("Error 2 sending to client")
 			break
 		}
 	}
-	messagesToSocket := make(chan []byte)
+	mutex.Unlock()
+	messagesToSocket := make(chan string)
 	connectionListEntry := activeConnectionsList.PushBack(messagesToSocket)
 	//recieve messages into this channel
-	messagesFromSocket := make(chan []byte)
+	messagesFromSocket := make(chan string)
 	go func() {
-		var msg []byte
+		var msg string
 		for {
 			err := ws.MessageReceiveJSON(&msg)
 			if err != nil {
 				close(messagesFromSocket)
 				return
 			}
-			if strings.Compare(string(msg), "StartService") == 0 {
+			if strings.Compare(msg, "StartService") == 0 {
 				launchProcessSocket()
 				continue
 			}
-			if strings.Compare(string(msg), "DumpSocketBuffer") == 0 {
+			if strings.Compare(msg, "DumpSocketBuffer") == 0 {
 				fmt.Println("DumpSocketBuffer")
-				for e := processSocketLocalLineBuffer.Front(); e != nil; e = e.Next() {
-					str := e.Value.([]byte)
-					fmt.Printf("%s\n", str)
+				mutex.Lock()
+
+				for i := range processSocketLocalLineBuffer {
+					//for e := processSocketLocalLineBuffer.Front(); e != nil; e = e.Next() {
+					//str := e.Value.([]byte)
+					//str := fmt.Sprintf("%s\n", e.Value)
+					//fmt.Println(str)
+
+					fmt.Println(processSocketLocalLineBuffer[i])
 				}
+				mutex.Unlock()
 				continue
 			}
 			fmt.Println(msg)
-			messagesFromSocket <- []byte(msg)
+			messagesFromSocket <- msg
 		}
 	}()
 
@@ -105,7 +116,7 @@ SocketLoop:
 		// 		break
 		// 	}
 		case msg := <-messagesToSocket:
-			ws.MessageSendJSON(string(msg))
+			ws.MessageSendJSON(msg)
 		case msg, notClosed := <-messagesFromSocket:
 			// If the channel is closed, they disconnected.
 			if !notClosed {
@@ -145,7 +156,7 @@ func launchProcessSocket() {
 }
 
 func initProcessSocket() {
-	fmt.Println("\nInitProcessSocket\n")
+	fmt.Println("InitProcessSocket")
 	if processSocketChecked == true && processSocketActive == false {
 		//launchProcessSocket()
 		time.Sleep(200 * time.Millisecond)
@@ -154,8 +165,9 @@ func initProcessSocket() {
 
 	conn, err := net.Dial("tcp4", "127.0.0.1:25560")
 	if err != nil {
-		fmt.Println("\nSocket Connect Error! Trying again in 1 sec\n", err)
-		time.Sleep(time.Second)
+		fmt.Print(err)
+		fmt.Println("\nSocket Connect Error! Trying again in 5 sec")
+		time.Sleep(time.Second * 5)
 		initProcessSocket()
 		return
 	}
@@ -174,7 +186,7 @@ func initProcessSocket() {
 		scanner := bufio.NewScanner(conn)
 		for scanner.Scan() {
 
-			socketData := scanner.Bytes()
+			socketData := scanner.Text()
 			fmt.Printf("Read %d bytes from socket %s\n", len(socketData), conn.RemoteAddr())
 
 			fmt.Printf("%s\n", socketData)
@@ -197,8 +209,13 @@ func initProcessSocket() {
 			//withNewLine := append(msg, '\n')
 
 			mutex.Lock()
-			processSocketLocalLineBuffer.PushBack(msg)
+			processSocketLocalLineBuffer = append(processSocketLocalLineBuffer, msg)
+			//processSocketLocalLineBuffer.PushBack(msg)
+			//l := processSocketLocalLineBuffer.Len()
+			l := len(processSocketLocalLineBuffer)
 			mutex.Unlock()
+			fmt.Print("Slice Len:", l)
+			fmt.Println()
 			sendToAllConnections(msg)
 			//conn.Write(withNewLine)
 		}
