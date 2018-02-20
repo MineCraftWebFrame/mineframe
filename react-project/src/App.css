@@ -25,7 +25,8 @@
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-} */
+} 
+*/
 
 .btn-service-control {
   margin: 20px 20px 20px 0;
@@ -35,4 +36,12 @@
 
 .serverStatus{
   height:40px;
+}
+
+div#serviceConsole {
+  text-align:left;
+  height: 250px;
+  overflow-y: scroll;
+  overflow-x: auto;
+  border: 2px solid #e0e0e0;
 }

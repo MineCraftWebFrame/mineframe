@@ -139,10 +139,12 @@ startService(){
     cmd.val('');
   }
   display(event) {
-
     console.log('Socket Event!')
     console.log(event);
-    $('#serviceConsole').append('<div class="message">'+ event + '</div>');
+    var sc = $('#serviceConsole')
+    sc.append('<div class="message">'+ event + '</div>');
+    //sc.animate({ scrollTop: sc[0].scrollHeight - sc.height() }, "easeOutQuint");
+    sc.scrollTop( sc[0].scrollHeight - sc.height() );
     //$('#serviceConsole').scrollTo('max')
   }
 
@@ -159,10 +161,6 @@ startService(){
           <h1 className="App-title">MineFrame Server</h1>
         </header>
         <p className="ServerStatus">Server Status: {this.state.ServerStatus}</p>
-        <div id="serviceConsole"></div>
-        <p>
-          Command: <input id="wsInput" onKeyPress={(e) => {this.socketInputKey(e)}} /> <button onClick={() => {this.socketInput()}}>Send</button>
-        </p>
         <p>
         <button disabled={this.state.btnStartDisabled} className="btn-service-control" onClick={(e) => {this.minecraftServerAction('start',e)}}>
           Start
@@ -173,6 +171,10 @@ startService(){
         <button disabled={this.state.btnRestartDisabled} className="btn-service-control" onClick={(e) => {this.minecraftServerAction('restart',e)}}>
           Restart
         </button>
+        </p>
+        <div id="serviceConsole"></div>
+        <p>
+          Command: <input id="wsInput" onKeyPress={(e) => {this.socketInputKey(e)}} /> <button onClick={() => {this.socketInput()}}>Send</button>
         </p>
         <ServerConfigEditor />
       </div>
